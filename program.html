@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Technical Presentation Feedback Generator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 2rem;
+      max-width: 800px;
+      margin: auto;
+      background-color: #f4f4f4;
+    }
+    textarea {
+      width: 100%;
+      height: 200px;
+      margin-bottom: 1rem;
+      padding: 1rem;
+      font-size: 1rem;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 1rem;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    .feedback {
+      background-color: white;
+      padding: 1rem;
+      margin-top: 1rem;
+      border-left: 5px solid #007bff;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Technical Presentation Feedback Generator</h1>
+
+  <textarea id="transcript" placeholder="Paste your presentation transcript here..."></textarea>
+  <button onclick="generateFeedback()">Generate Feedback</button>
+
+  <div id="feedback" class="feedback" style="display:none;"></div>
+
+  <script>
+    const OPENROUTER_API_KEY = "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"; // 🔐 Replace with your actual OpenRouter API key
+
+    async function generateFeedback() {
+      const transcript = document.getElementById('transcript').value.trim();
+      const feedbackDiv = document.getElementById('feedback');
+      feedbackDiv.style.display = 'block';
+      feedbackDiv.textContent = 'Generating feedback...';
+
+      if (!transcript) {
+        feedbackDiv.textContent = 'Please paste a transcript before generating feedback.';
+        return;
+      }
+
+      const prompt = `You're an expert in communication and technical presentations. Please review the following technical presentation transcript. Provide detailed feedback on:
+1. Clarity of ideas
+2. Technical depth
+3. Structure and logical flow
+4. Use of examples or visuals
+5. Engagement and delivery
+
+Transcript:
+"""${transcript}"""`;
+
+      try {
+        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
+            "Content-Type": "application/json",
+            "HTTP-Referer": "http://localhost", // ✅ Update this if deploying to a live domain
+            "X-Title": "Presentation Feedback Generator"
+          },
+          body: JSON.stringify({
+            model: "mistralai/mistral-7b-instruct", // You can also try: openai/gpt-3.5-turbo
+            messages: [{ role: "user", content: prompt }],
+            temperature: 0.7
+          })
+        });
+
+        const data = await response.json();
+        feedbackDiv.textContent = data.choices?.[0]?.message?.content || 'No feedback received.';
+      } catch (error) {
+        feedbackDiv.textContent = 'Error generating feedback. Check the console for details.';
+        console.error("API call failed:", error);
+      }
+    }
+  </script>
+
+</body>
+</html>
